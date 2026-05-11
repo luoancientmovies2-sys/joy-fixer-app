@@ -62,7 +62,7 @@ export async function getTodayDownloadCount(userId: string): Promise<number> {
  */
 export async function tryConsumeDownload(
   userId: string,
-  plan: string | undefined | null
+  plan: string | undefined | null,
 ): Promise<{ allowed: boolean; count: number; limit: number }> {
   const limit = getDailyLimitForPlan(plan);
   const r = ref(database, `downloadCounts/${userId}/${todayKey()}`);
@@ -80,7 +80,10 @@ export async function tryConsumeDownload(
   return { allowed, count: newCount, limit };
 }
 
-export async function resetDownloadCountsForSubscription(userId: string, resetKey: string): Promise<boolean> {
+export async function resetDownloadCountsForSubscription(
+  userId: string,
+  resetKey: string,
+): Promise<boolean> {
   try {
     const markerRef = ref(database, `downloadCounts/${userId}/_subscriptionResetKey`);
     const markerSnap = await get(markerRef);
@@ -103,7 +106,10 @@ export async function resetDownloadCountsForSubscription(userId: string, resetKe
 export async function resetTodayDownloadCount(userId: string, resetKey?: string): Promise<boolean> {
   try {
     const r = ref(database, `downloadCounts/${userId}`);
-    await set(r, resetKey ? { [todayKey()]: 0, _subscriptionResetKey: resetKey } : { [todayKey()]: 0 });
+    await set(
+      r,
+      resetKey ? { [todayKey()]: 0, _subscriptionResetKey: resetKey } : { [todayKey()]: 0 },
+    );
     return true;
   } catch (e) {
     console.error("Failed to reset download counts:", e);

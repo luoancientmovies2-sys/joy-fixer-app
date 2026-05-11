@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { buildSubscriptionResetKey, resetDownloadCountsForSubscription } from "@/lib/download-limit";
+import {
+  buildSubscriptionResetKey,
+  resetDownloadCountsForSubscription,
+} from "@/lib/download-limit";
 import type { Subscription } from "@/lib/subscription-service";
 
 const ADMIN_EMAIL = "lightstarrecord@gmail.com";
@@ -86,11 +89,12 @@ export function useSubscription() {
   const hasActiveSubscription = isAdmin || (subscription?.isActive ?? false);
   // Agent Plan grants access to ALL content (normal + agent movies)
   // Normal plans do NOT grant access to agent-marked movies
-  const hasAgentPlan = isAdmin || (subscription?.isActive && subscription?.plan === "Agent Plan") || false;
+  const hasAgentPlan =
+    isAdmin || (subscription?.isActive && subscription?.plan === "Agent Plan") || false;
 
   const refreshSubscription = async () => {
     if (!user) return;
-    
+
     if (isAdmin) {
       setSubscription({
         isActive: true,
