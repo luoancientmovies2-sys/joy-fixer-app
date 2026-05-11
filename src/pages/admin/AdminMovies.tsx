@@ -95,7 +95,7 @@ export default function AdminMovies() {
     try {
       const dataToSave = {
         ...formData,
-        ...(formData.isAgent ? { agentMarkedAt: editingMovie?.isAgent ? (editingMovie as any).agentMarkedAt || Date.now() : Date.now() } : { isAgent: false, agentMarkedAt: null }),
+        ...(formData.isAgent ? { agentMarkedAt: editingMovie?.isAgent ? (editingMovie as any).agentMarkedAt || Date.now() : Date.now() } : { isAgent: false, agentMarkedAt: undefined }),
       };
       if (editingMovie?.id) {
         await updateMovie(editingMovie.id, dataToSave);
