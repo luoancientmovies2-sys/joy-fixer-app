@@ -2,6 +2,7 @@ import { database, db } from "./firebase";
 import { ref, push, set, get, update, remove } from "firebase/database";
 import { collection, getDocs, doc, updateDoc, deleteDoc, Timestamp, getDoc, setDoc, query, orderBy, limit, where } from "firebase/firestore";
 import type { Movie, Series, Episode, Advert, HeroImage, App } from "./firebase-db";
+import { resetTodayDownloadCount } from "./download-limit";
 
 export interface Transaction {
   id?: string;
@@ -225,6 +226,14 @@ export async function updateUserSubscription(
   });
   
   console.log("[Admin] Subscription also saved to subscriptions collection");
+
+  // Reset today's daily download count so user gets fresh quota on new/upgraded plan
+  try {
+    await resetTodayDownloadCount(userId);
+    console.log("[Admin] Daily download count reset for:", userId);
+  } catch (e) {
+    console.error("[Admin] Failed to reset daily download count:", e);
+  }
 }
 
 export async function removeUserSubscription(userId: string): Promise<void> {
