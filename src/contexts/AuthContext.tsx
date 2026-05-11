@@ -1,13 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signInWithPopup, 
-  signOut, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
   sendPasswordResetEmail,
   onAuthStateChanged,
   updateProfile,
-  User as FirebaseUser
+  User as FirebaseUser,
 } from "firebase/auth";
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "@/lib/firebase";
@@ -23,7 +23,16 @@ export interface User {
     name: string;
     expiresAt: Date;
     isActive?: boolean;
+    activatedAt?: Date;
   };
+}
+
+function toDate(value: unknown): Date | undefined {
+  if (!value) return undefined;
+  if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    return value.toDate();
+  }
+  return new Date(value as string | number | Date);
 }
 
 interface AuthContextType {
@@ -43,7 +52,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 async function getUserData(firebaseUser: FirebaseUser): Promise<User> {
   const userDocRef = doc(db, "users", firebaseUser.uid);
   const userDoc = await getDoc(userDocRef);
-  
+
   if (userDoc.exists()) {
     const data = userDoc.data();
     return {
@@ -52,14 +61,17 @@ async function getUserData(firebaseUser: FirebaseUser): Promise<User> {
       name: data.name || firebaseUser.displayName || "User",
       avatar: data.avatar || firebaseUser.photoURL || undefined,
       isAdmin: data.isAdmin || false,
-      plan: data.subscription ? {
-        name: data.subscription.plan,
-        expiresAt: data.subscription.expiresAt?.toDate(),
-        isActive: data.subscription.isActive,
-      } : undefined,
+      plan: data.subscription
+        ? {
+            name: data.subscription.plan,
+            expiresAt: toDate(data.subscription.expiresAt) || new Date(0),
+            isActive: data.subscription.isActive,
+            activatedAt: toDate(data.subscription.activatedAt),
+          }
+        : undefined,
     };
   }
-  
+
   // If no Firestore doc exists, create one
   const newUser = {
     id: firebaseUser.uid,
@@ -69,9 +81,9 @@ async function getUserData(firebaseUser: FirebaseUser): Promise<User> {
     isAdmin: false,
     createdAt: new Date(),
   };
-  
+
   await setDoc(userDocRef, newUser);
-  
+
   return {
     id: firebaseUser.uid,
     email: firebaseUser.email || "",
@@ -127,17 +139,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             let plan: User["plan"] | undefined;
             if (subscription?.isActive) {
-              const expiresAt: Date | undefined = subscription.expiresAt?.toDate
-                ? subscription.expiresAt.toDate()
-                : subscription.expiresAt
-                  ? new Date(subscription.expiresAt)
-                  : undefined;
+              const expiresAt = toDate(subscription.expiresAt);
+              const activatedAt = toDate(subscription.activatedAt);
 
               if (expiresAt && expiresAt > new Date() && subscription.plan) {
                 plan = {
                   name: subscription.plan,
                   expiresAt,
                   isActive: true,
+                  activatedAt,
                 };
               }
             }
@@ -155,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           (error) => {
             console.error("Error listening to user document:", error);
             setIsLoading(false);
-          }
+          },
         );
       } catch (error) {
         console.error("Error getting user data:", error);
@@ -184,19 +194,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       // Update display name
       await updateProfile(result.user, { displayName: name });
-      
+
       // Create user document in Firestore (merge to avoid duplicates)
       const userDocRef = doc(db, "users", result.user.uid);
-      await setDoc(userDocRef, {
-        name,
-        email,
-        isAdmin: false,
-        createdAt: new Date(),
-      }, { merge: true });
-      
+      await setDoc(
+        userDocRef,
+        {
+          name,
+          email,
+          isAdmin: false,
+          createdAt: new Date(),
+        },
+        { merge: true },
+      );
+
       // onSnapshot listener will update user state automatically
       return true;
     } catch (error) {
@@ -237,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updatePlan = async (planName: string, days: number) => {
     if (!user) return;
-    
+
     const expiresAt = new Date();
     if (days === -1) {
       // Lifetime
@@ -245,20 +259,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       expiresAt.setDate(expiresAt.getDate() + days);
     }
-    
+
     const subscription = {
       plan: planName,
       expiresAt,
       isActive: true,
+      activatedAt: new Date(),
     };
-    
+
     // Update Firestore
     const userDocRef = doc(db, "users", user.id);
     await updateDoc(userDocRef, { subscription });
 
     // Reset today's daily download count for fresh quota
     await resetTodayDownloadCount(user.id);
-    
+
     setUser({
       ...user,
       plan: {
@@ -270,7 +285,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, logout, resetPassword, updatePlan }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, login, signup, loginWithGoogle, logout, resetPassword, updatePlan }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  buildSubscriptionResetKey,
+  resetDownloadCountsForSubscription,
+} from "@/lib/download-limit";
 import type { Subscription } from "@/lib/subscription-service";
 
 const ADMIN_EMAIL = "lightstarrecord@gmail.com";
@@ -47,6 +51,7 @@ export function useSubscription() {
             isActive: true,
             plan: plan.name,
             expiresAt: new Date(plan.expiresAt),
+            activatedAt: plan.activatedAt,
             userId: user.id,
           });
           setIsLoading(false);
@@ -66,16 +71,30 @@ export function useSubscription() {
     return () => {
       cancelled = true;
     };
+  }, [user, isAdmin]);
+
+  useEffect(() => {
+    const plan = user?.plan;
+    if (!user?.id || isAdmin || !plan?.isActive || !plan.expiresAt) return;
+
+    const resetKey = buildSubscriptionResetKey({
+      plan: plan.name,
+      expiresAt: plan.expiresAt,
+      activatedAt: plan.activatedAt,
+    });
+
+    resetDownloadCountsForSubscription(user.id, resetKey);
   }, [user?.id, user?.plan, isAdmin]);
 
   const hasActiveSubscription = isAdmin || (subscription?.isActive ?? false);
   // Agent Plan grants access to ALL content (normal + agent movies)
   // Normal plans do NOT grant access to agent-marked movies
-  const hasAgentPlan = isAdmin || (subscription?.isActive && subscription?.plan === "Agent Plan") || false;
+  const hasAgentPlan =
+    isAdmin || (subscription?.isActive && subscription?.plan === "Agent Plan") || false;
 
   const refreshSubscription = async () => {
     if (!user) return;
-    
+
     if (isAdmin) {
       setSubscription({
         isActive: true,
@@ -93,6 +112,7 @@ export function useSubscription() {
         isActive: true,
         plan: plan.name,
         expiresAt: new Date(plan.expiresAt),
+        activatedAt: plan.activatedAt,
         userId: user.id,
       });
     } else {
