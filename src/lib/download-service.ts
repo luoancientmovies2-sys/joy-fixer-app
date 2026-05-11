@@ -139,7 +139,7 @@ export async function validateAndUseDownloadLink(token: string): Promise<{
     }
 
     // Check if expired
-    if (Date.now() > linkData.expiresAt) {
+    if (Date.now() > link.expiresAt) {
       return { 
         valid: false, 
         error: "This download link has expired. Please generate a new one." 
@@ -147,18 +147,18 @@ export async function validateAndUseDownloadLink(token: string): Promise<{
     }
 
     // Mark as used
-    const linkRef = ref(database, `downloadLinks/${linkKey}`);
+    const linkRef = ref(database, `downloadLinks/${key}`);
     await set(linkRef, {
-      ...linkData,
+      ...link,
       used: true,
       usedAt: Date.now(),
     });
 
-    const filename = sanitizeFilename(`${linkData.contentTitle}.mp4`);
+    const filename = sanitizeFilename(`${link.contentTitle}.mp4`);
     
     return {
       valid: true,
-      fileId: linkData.fileId,
+      fileId: link.fileId,
       filename,
     };
   } catch (error) {
