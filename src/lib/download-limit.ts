@@ -22,6 +22,26 @@ export function getDailyLimitForPlan(plan?: string | null): number {
   return 0;
 }
 
+function resetValue(value: unknown): string {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+export function buildSubscriptionResetKey(subscription: {
+  plan?: string | null;
+  expiresAt?: Date | string | number | null;
+  activatedAt?: Date | string | number | null;
+  orderId?: string | null;
+  orderTrackingId?: string | null;
+}): string {
+  return [
+    subscription.plan || "unknown-plan",
+    resetValue(subscription.activatedAt) || resetValue(subscription.expiresAt),
+    subscription.orderId || subscription.orderTrackingId || "no-order",
+  ].join("|");
+}
+
 function todayKey(): string {
   const d = new Date();
   const y = d.getFullYear();
