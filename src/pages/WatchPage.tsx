@@ -35,7 +35,7 @@ import {
 import { getFileIdFromUrl, isDirectVideoUrl, getGoogleDriveDownloadUrl } from "@/lib/download-service";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { tryConsumeDownload, getDailyLimitForPlan } from "@/lib/download-limit";
+import { buildSubscriptionResetKey, resetDownloadCountsForSubscription, tryConsumeDownload, getDailyLimitForPlan } from "@/lib/download-limit";
 import { SubscriptionRequired } from "@/components/subscription/SubscriptionRequired";
 import { SubscriptionModal } from "@/components/subscription/SubscriptionModal";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -221,6 +221,10 @@ export default function WatchPage() {
     // Enforce daily download limit per plan (admin/lifetime/agent unlimited)
     try {
       const planName = subscription?.plan;
+      if (subscription) {
+        const resetKey = buildSubscriptionResetKey(subscription);
+        await resetDownloadCountsForSubscription(user.id, resetKey);
+      }
       const limit = getDailyLimitForPlan(planName);
       const consume = await tryConsumeDownload(user.id, planName);
       if (!consume.allowed) {
