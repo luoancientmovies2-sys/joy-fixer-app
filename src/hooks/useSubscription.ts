@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildSubscriptionResetKey, resetDownloadCountsForSubscription } from "@/lib/download-limit";
 import type { Subscription } from "@/lib/subscription-service";
 
 const ADMIN_EMAIL = "lightstarrecord@gmail.com";
@@ -47,6 +48,7 @@ export function useSubscription() {
             isActive: true,
             plan: plan.name,
             expiresAt: new Date(plan.expiresAt),
+            activatedAt: plan.activatedAt,
             userId: user.id,
           });
           setIsLoading(false);
@@ -93,6 +95,7 @@ export function useSubscription() {
         isActive: true,
         plan: plan.name,
         expiresAt: new Date(plan.expiresAt),
+        activatedAt: plan.activatedAt,
         userId: user.id,
       });
     } else {
