@@ -23,7 +23,13 @@ export interface User {
     name: string;
     expiresAt: Date;
     isActive?: boolean;
+    activatedAt?: Date;
   };
+}
+
+function toDate(value: any): Date | undefined {
+  if (!value) return undefined;
+  return value?.toDate ? value.toDate() : new Date(value);
 }
 
 interface AuthContextType {
@@ -54,8 +60,9 @@ async function getUserData(firebaseUser: FirebaseUser): Promise<User> {
       isAdmin: data.isAdmin || false,
       plan: data.subscription ? {
         name: data.subscription.plan,
-        expiresAt: data.subscription.expiresAt?.toDate(),
+        expiresAt: toDate(data.subscription.expiresAt) || new Date(0),
         isActive: data.subscription.isActive,
+        activatedAt: toDate(data.subscription.activatedAt),
       } : undefined,
     };
   }
@@ -127,17 +134,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             let plan: User["plan"] | undefined;
             if (subscription?.isActive) {
-              const expiresAt: Date | undefined = subscription.expiresAt?.toDate
-                ? subscription.expiresAt.toDate()
-                : subscription.expiresAt
-                  ? new Date(subscription.expiresAt)
-                  : undefined;
+              const expiresAt = toDate(subscription.expiresAt);
+              const activatedAt = toDate(subscription.activatedAt);
 
               if (expiresAt && expiresAt > new Date() && subscription.plan) {
                 plan = {
                   name: subscription.plan,
                   expiresAt,
                   isActive: true,
+                  activatedAt,
                 };
               }
             }
@@ -250,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       plan: planName,
       expiresAt,
       isActive: true,
+      activatedAt: new Date(),
     };
     
     // Update Firestore
