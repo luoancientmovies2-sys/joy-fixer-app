@@ -71,7 +71,7 @@ export function useSubscription() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, user?.plan, isAdmin]);
+  }, [user, isAdmin]);
 
   useEffect(() => {
     const plan = user?.plan;
@@ -84,7 +84,7 @@ export function useSubscription() {
     });
 
     resetDownloadCountsForSubscription(user.id, resetKey);
-  }, [user?.id, user?.plan?.name, user?.plan?.expiresAt, user?.plan?.activatedAt, isAdmin]);
+  }, [user?.id, user?.plan, isAdmin]);
 
   const hasActiveSubscription = isAdmin || (subscription?.isActive ?? false);
   // Agent Plan grants access to ALL content (normal + agent movies)
