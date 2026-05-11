@@ -1,1 +1,4 @@
 project_id = "mmuksjpmafjikkrypoda"
+
+[functions.pesapal]
+verify_jwt = false
