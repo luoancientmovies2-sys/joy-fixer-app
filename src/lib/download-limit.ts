@@ -1,5 +1,5 @@
 import { database } from "./firebase";
-import { ref, get, runTransaction, remove, set } from "firebase/database";
+import { ref, get, runTransaction, set } from "firebase/database";
 
 // Daily download limits per subscription plan
 export const dailyDownloadLimits: Record<string, number> = {
@@ -60,15 +60,33 @@ export async function tryConsumeDownload(
   return { allowed, count: newCount, limit };
 }
 
-/**
- * Reset today's download count for a user. Called when a user activates
- * a new subscription or upgrades, so they get a fresh daily quota.
- */
-export async function resetTodayDownloadCount(userId: string): Promise<void> {
+export async function resetDownloadCountsForSubscription(userId: string, resetKey: string): Promise<boolean> {
   try {
-    const r = ref(database, `downloadCounts/${userId}/${todayKey()}`);
-    await set(r, 0);
+    const markerRef = ref(database, `downloadCounts/${userId}/_subscriptionResetKey`);
+    const markerSnap = await get(markerRef);
+
+    if (markerSnap.exists() && markerSnap.val() === resetKey) {
+      return true;
+    }
+
+    return resetTodayDownloadCount(userId, resetKey);
   } catch (e) {
-    console.error("Failed to reset daily download count:", e);
+    console.error("Failed to check subscription download reset:", e);
+    return false;
+  }
+}
+
+/**
+ * Reset all stored download counters for a user. Called when a user activates
+ * a new subscription or upgrades, so every previous limit count starts at 0.
+ */
+export async function resetTodayDownloadCount(userId: string, resetKey?: string): Promise<boolean> {
+  try {
+    const r = ref(database, `downloadCounts/${userId}`);
+    await set(r, resetKey ? { [todayKey()]: 0, _subscriptionResetKey: resetKey } : { [todayKey()]: 0 });
+    return true;
+  } catch (e) {
+    console.error("Failed to reset download counts:", e);
+    return false;
   }
 }
