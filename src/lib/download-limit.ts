@@ -85,7 +85,7 @@ export async function resetDownloadCountsForSubscription(
   resetKey: string,
 ): Promise<boolean> {
   try {
-    const markerRef = ref(database, `downloadCounts/${userId}/_subscriptionResetKey`);
+    const markerRef = ref(database, `downloadResetMarkers/${userId}`);
     const markerSnap = await get(markerRef);
 
     if (markerSnap.exists() && markerSnap.val() === resetKey) {
