@@ -27,9 +27,12 @@ export interface User {
   };
 }
 
-function toDate(value: any): Date | undefined {
+function toDate(value: unknown): Date | undefined {
   if (!value) return undefined;
-  return value?.toDate ? value.toDate() : new Date(value);
+  if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    return value.toDate();
+  }
+  return new Date(value as string | number | Date);
 }
 
 interface AuthContextType {
