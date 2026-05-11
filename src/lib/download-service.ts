@@ -127,8 +127,11 @@ export async function validateAndUseDownloadLink(token: string): Promise<{
       return { valid: false, error: "Invalid download link" };
     }
 
+    const link = linkData as DownloadLink;
+    const key = linkKey as string;
+
     // Check if already used
-    if (linkData.used) {
+    if (link.used) {
       return { 
         valid: false, 
         error: "This download link has already been used. Subscribe to www.luoancientmovies.com for unlimited downloads." 
