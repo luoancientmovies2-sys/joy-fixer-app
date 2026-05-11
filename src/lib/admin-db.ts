@@ -2,6 +2,7 @@ import { database, db } from "./firebase";
 import { ref, push, set, get, update, remove } from "firebase/database";
 import { collection, getDocs, doc, updateDoc, deleteDoc, Timestamp, getDoc, setDoc, query, orderBy, limit, where } from "firebase/firestore";
 import type { Movie, Series, Episode, Advert, HeroImage, App } from "./firebase-db";
+import { resetTodayDownloadCount } from "./download-limit";
 
 export interface Transaction {
   id?: string;
