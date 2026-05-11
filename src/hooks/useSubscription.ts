@@ -70,6 +70,19 @@ export function useSubscription() {
     };
   }, [user?.id, user?.plan, isAdmin]);
 
+  useEffect(() => {
+    const plan = user?.plan;
+    if (!user?.id || isAdmin || !plan?.isActive || !plan.expiresAt) return;
+
+    const resetKey = buildSubscriptionResetKey({
+      plan: plan.name,
+      expiresAt: plan.expiresAt,
+      activatedAt: plan.activatedAt,
+    });
+
+    resetDownloadCountsForSubscription(user.id, resetKey);
+  }, [user?.id, user?.plan?.name, user?.plan?.expiresAt, user?.plan?.activatedAt, isAdmin]);
+
   const hasActiveSubscription = isAdmin || (subscription?.isActive ?? false);
   // Agent Plan grants access to ALL content (normal + agent movies)
   // Normal plans do NOT grant access to agent-marked movies
