@@ -85,7 +85,7 @@ export async function resetDownloadCountsForSubscription(
   resetKey: string,
 ): Promise<boolean> {
   try {
-    const markerRef = ref(database, `downloadCounts/${userId}/_subscriptionResetKey`);
+    const markerRef = ref(database, `downloadResetMarkers/${userId}`);
     const markerSnap = await get(markerRef);
 
     if (markerSnap.exists() && markerSnap.val() === resetKey) {
@@ -105,11 +105,11 @@ export async function resetDownloadCountsForSubscription(
  */
 export async function resetTodayDownloadCount(userId: string, resetKey?: string): Promise<boolean> {
   try {
-    const r = ref(database, `downloadCounts/${userId}`);
-    await set(
-      r,
-      resetKey ? { [todayKey()]: 0, _subscriptionResetKey: resetKey } : { [todayKey()]: 0 },
-    );
+    // Wipe ALL daily counters for this user (today + any stale day keys)
+    await set(ref(database, `downloadCounts/${userId}`), { [todayKey()]: 0 });
+    if (resetKey) {
+      await set(ref(database, `downloadResetMarkers/${userId}`), resetKey);
+    }
     return true;
   } catch (e) {
     console.error("Failed to reset download counts:", e);
