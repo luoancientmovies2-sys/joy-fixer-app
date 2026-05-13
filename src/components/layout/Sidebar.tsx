@@ -12,6 +12,7 @@ import {
   Shield,
   UserCheck,
   Music,
+  LayoutGrid,
 } from "lucide-react";
 import luoAncientLogo from "@/assets/luo-ancient-logo.png";
 import { SubscriptionModal } from "@/components/subscription/SubscriptionModal";
@@ -22,6 +23,7 @@ const navItems = [
   { title: "Home", href: "/", icon: Home },
   { title: "Movies", href: "/movies", icon: Film },
   { title: "TV Series", href: "/tv-series", icon: Tv },
+  { title: "Genres", href: "/genres", icon: LayoutGrid },
   { title: "Music", href: "https://luomusic.luoancientmovies.com/", icon: Music, external: true },
   { title: "Agent", href: "/agent", icon: UserCheck },
   { title: "Guide", href: "/adverts", icon: Megaphone },
