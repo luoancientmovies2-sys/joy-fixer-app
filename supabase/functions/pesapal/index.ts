@@ -6,17 +6,44 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PESAPAL_API_URL = "https://pay.pesapal.com/v3";
+const PESAPAL_LIVE_API_URL = "https://pay.pesapal.com/v3";
+const PESAPAL_SANDBOX_API_URL = "https://cybqa.pesapal.com/pesapalv3";
 
 // Cache token in memory (edge function instance)
-let cachedToken: { token: string; expiryDate: string } | null = null;
+let cachedToken: { token: string; expiryDate: string; baseUrl: string } | null = null;
 
-async function getPesapalToken(): Promise<string> {
+async function requestPesapalToken(baseUrl: string, consumerKey: string, consumerSecret: string) {
+  const res = await fetch(`${baseUrl}/api/Auth/RequestToken`, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ consumer_key: consumerKey, consumer_secret: consumerSecret }),
+  });
+
+  const rawText = await res.text();
+  const data = JSON.parse(rawText);
+
+  if (!res.ok) {
+    throw new Error(`Pesapal auth failed [${res.status}] on ${baseUrl}: ${data?.message || rawText}`);
+  }
+
+  const isSuccess = !data?.error && data?.token && String(data?.status ?? "200") === "200";
+  if (!isSuccess) {
+    throw new Error(`Pesapal auth failed on ${baseUrl}: ${data?.message || rawText}`);
+  }
+
+  return {
+    token: data.token as string,
+    expiryDate: data.expiryDate as string,
+    baseUrl,
+  };
+}
+
+async function getPesapalToken(): Promise<{ token: string; baseUrl: string }> {
   // Check cache
   if (cachedToken) {
     const expiry = new Date(cachedToken.expiryDate);
     if (expiry.getTime() - Date.now() > 60 * 1000) {
-      return cachedToken.token;
+      return { token: cachedToken.token, baseUrl: cachedToken.baseUrl };
     }
   }
 
@@ -27,27 +54,28 @@ async function getPesapalToken(): Promise<string> {
     throw new Error("Pesapal credentials not configured");
   }
 
-  const res = await fetch(`${PESAPAL_API_URL}/api/Auth/RequestToken`, {
-    method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ consumer_key: consumerKey, consumer_secret: consumerSecret }),
-  });
+  const errors: string[] = [];
+  for (const baseUrl of [PESAPAL_LIVE_API_URL, PESAPAL_SANDBOX_API_URL]) {
+    try {
+      cachedToken = await requestPesapalToken(baseUrl, consumerKey, consumerSecret);
+      return { token: cachedToken.token, baseUrl: cachedToken.baseUrl };
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
 
-  if (!res.ok) throw new Error(`Pesapal auth failed: ${res.status}`);
-  const data = await res.json();
-  if (data.error || data.status !== "200") throw new Error(data.message || "Auth failed");
-
-  cachedToken = { token: data.token, expiryDate: data.expiryDate };
-  return data.token;
+  throw new Error(errors.join(" | "));
 }
 
-// Cache IPN ID in memory
-let cachedIpnId: string | null = null;
+// Cache IPN IDs in memory per environment/url pair
+const cachedIpnIds = new Map<string, string>();
 
-async function registerIPN(token: string, callbackUrl: string): Promise<string> {
+async function registerIPN(token: string, callbackUrl: string, baseUrl: string): Promise<string> {
+  const cacheKey = `${baseUrl}:${callbackUrl}`;
+  const cachedIpnId = cachedIpnIds.get(cacheKey);
   if (cachedIpnId) return cachedIpnId;
 
-  const res = await fetch(`${PESAPAL_API_URL}/api/URLSetup/RegisterIPN`, {
+  const res = await fetch(`${baseUrl}/api/URLSetup/RegisterIPN`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -61,7 +89,7 @@ async function registerIPN(token: string, callbackUrl: string): Promise<string> 
   const data = await res.json();
   if (data.error || data.status !== "200") throw new Error("IPN registration failed");
 
-  cachedIpnId = data.ipn_id;
+  cachedIpnIds.set(cacheKey, data.ipn_id);
   return data.ipn_id;
 }
 
@@ -87,12 +115,13 @@ Deno.serve(async (req) => {
 
     if (action === "submit-order" && req.method === "POST") {
       const body = await req.json();
-      const { orderId, amount, description, callbackUrl, email, phoneNumber, firstName, lastName } = body;
+      const { orderId, amount, description, callbackUrl, ipnUrl, email, phoneNumber, firstName, lastName } = body;
 
-      const token = await getPesapalToken();
+      const { token, baseUrl } = await getPesapalToken();
       
-      // Register IPN using the callback URL
-      const ipnId = await registerIPN(token, callbackUrl);
+      // Register IPN using the backend notification URL, not the browser callback page
+      const notificationUrl = typeof ipnUrl === "string" && ipnUrl ? ipnUrl : callbackUrl;
+      const ipnId = await registerIPN(token, notificationUrl, baseUrl);
 
       const normalizedPhoneNumber = normalizeUgandaPhoneNumber(phoneNumber || "");
       if (!normalizedPhoneNumber) {
@@ -130,7 +159,7 @@ Deno.serve(async (req) => {
         orderRequest.billing_address.email_address = email;
       }
 
-      const res = await fetch(`${PESAPAL_API_URL}/api/Transactions/SubmitOrderRequest`, {
+      const res = await fetch(`${baseUrl}/api/Transactions/SubmitOrderRequest`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -163,9 +192,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      const token = await getPesapalToken();
+      const { token, baseUrl } = await getPesapalToken();
       const res = await fetch(
-        `${PESAPAL_API_URL}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
+        `${baseUrl}/api/Transactions/GetTransactionStatus?orderTrackingId=${orderTrackingId}`,
         {
           headers: {
             Accept: "application/json",
