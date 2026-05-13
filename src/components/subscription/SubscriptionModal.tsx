@@ -256,6 +256,7 @@ export function SubscriptionModal({ open, onOpenChange, agentOnly }: Subscriptio
         amount: selectedPlan!.price,
         description: `Luo Ancient - ${selectedPlan!.duration} Subscription`,
         callbackUrl,
+        ipnUrl,
         email: user.email,
         phoneNumber: normalizedPhone,
         firstName,
