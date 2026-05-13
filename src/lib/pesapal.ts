@@ -96,6 +96,7 @@ export async function initiatePesapalPayment(params: {
   amount: number;
   description: string;
   callbackUrl: string;
+  ipnUrl: string;
   email: string;
   phoneNumber: string;
   firstName: string;
@@ -106,6 +107,7 @@ export async function initiatePesapalPayment(params: {
     amount: params.amount,
     description: params.description,
     callbackUrl: params.callbackUrl,
+    ipnUrl: params.ipnUrl,
     email: params.email,
     phoneNumber: params.phoneNumber,
     firstName: params.firstName,
