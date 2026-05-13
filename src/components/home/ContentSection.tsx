@@ -1,16 +1,19 @@
 import { MovieGrid } from "@/components/movies/MovieGrid";
 import { getContentByCategory, type ContentItem } from "@/lib/firebase-db";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ContentSectionProps {
   title: string;
   category?: string;
+  showGenreFilter?: boolean;
 }
 
-export function ContentSection({ title, category = "trending" }: ContentSectionProps) {
+export function ContentSection({ title, category = "trending", showGenreFilter = false }: ContentSectionProps) {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGenre, setSelectedGenre] = useState<string>("all");
 
   useEffect(() => {
     async function fetchContent() {
@@ -27,6 +30,27 @@ export function ContentSection({ title, category = "trending" }: ContentSectionP
 
     fetchContent();
   }, [category]);
+
+  const genres = useMemo(() => {
+    if (!showGenreFilter) return [];
+    const uniqueGenres = new Set<string>();
+    content.forEach(item => {
+      if (item.genre) {
+        const itemGenres = item.genre.split(',').map(g => g.trim()).filter(Boolean);
+        itemGenres.forEach(g => uniqueGenres.add(g));
+      }
+    });
+    return Array.from(uniqueGenres).sort();
+  }, [content, showGenreFilter]);
+
+  const filteredContent = useMemo(() => {
+    if (!showGenreFilter || selectedGenre === "all") return content;
+    return content.filter(item => {
+      if (!item.genre) return false;
+      const itemGenres = item.genre.split(',').map(g => g.trim().toLowerCase());
+      return itemGenres.includes(selectedGenre.toLowerCase());
+    });
+  }, [content, selectedGenre, showGenreFilter]);
 
   if (loading) {
     return (
@@ -55,8 +79,21 @@ export function ContentSection({ title, category = "trending" }: ContentSectionP
     <section>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl lg:text-2xl font-bold">{title}</h2>
+        {showGenreFilter && genres.length > 0 && (
+          <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+            <SelectTrigger className="w-[140px] h-8 text-xs bg-background/50 border-white/10">
+              <SelectValue placeholder="All Genres" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Genres</SelectItem>
+              {genres.map(g => (
+                <SelectItem key={g} value={g}>{g}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
-      <MovieGrid items={content} />
+      <MovieGrid items={filteredContent} />
     </section>
   );
 }
