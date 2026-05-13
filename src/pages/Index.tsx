@@ -29,7 +29,7 @@ const Index = () => {
             ))}
           </div>
         </div>
-        <ContentSection title="🔥Trending in Cinema🎞️" category="trending" showGenreFilter={true} />
+        <ContentSection title="🔥Trending in Cinema🎞️" category="trending" />
         <ContentSection title="Popular Movies" category="popular" />
         <ContentSection title="Top TV Series" category="top-series" />
         <ContentSection title="Recently Added" category="recently-added" />
