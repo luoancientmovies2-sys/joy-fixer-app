@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getMovies, type Movie } from "@/lib/firebase-db";
 import { createMovie, updateMovie, deleteMovie } from "@/lib/admin-db";
 
-const CATEGORIES = ["trending", "popular", "action", "comedy", "drama", "horror", "romance", "sci-fi"];
+const CATEGORIES = ["trending", "popular"];
+const GENRES = ["Hindi", "Action", "Sci-Fi", "Nollywood", "Horror", "Animation", "Comedy", "Romance", "Cartoon", "War", "Kung Fu", "Musical", "Fantasy"];
 
 export default function AdminMovies() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -170,14 +171,31 @@ export default function AdminMovies() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="genre">Genre</Label>
-                  <Input
-                    id="genre"
-                    value={formData.genre}
-                    onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                    placeholder="Action, Drama, Comedy..."
-                    required
-                  />
+                  <Label>Genres</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {GENRES.map((g) => {
+                      const isSelected = formData.genre.split(', ').includes(g);
+                      return (
+                        <Button
+                          key={g}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            let current = formData.genre ? formData.genre.split(', ') : [];
+                            if (isSelected) {
+                              current = current.filter(c => c !== g);
+                            } else {
+                              current.push(g);
+                            }
+                            setFormData({ ...formData, genre: current.join(', ') });
+                          }}
+                        >
+                          {g}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -236,7 +254,7 @@ export default function AdminMovies() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="rating">Rating (0-10)</Label>
                   <Input
@@ -247,16 +265,6 @@ export default function AdminMovies() {
                     step="0.1"
                     value={formData.rating}
                     onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Duration (min)</Label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    min="0"
-                    value={formData.duration}
-                    onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
                   />
                 </div>
                 <div className="space-y-2">
