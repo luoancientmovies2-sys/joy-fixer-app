@@ -10,6 +10,8 @@ import WatchPage from "./pages/WatchPage";
 import NotFound from "./pages/NotFound";
 import MoviesPage from "./pages/MoviesPage";
 import TvSeriesPage from "./pages/TvSeriesPage";
+import GenresPage from "./pages/GenresPage";
+import GenreCategoryPage from "./pages/GenreCategoryPage";
 import AdvertsPage from "./pages/AdvertsPage";
 import AppsPage from "./pages/AppsPage";
 import TrendingPage from "./pages/TrendingPage";
@@ -66,6 +68,8 @@ const App = () => (
               <Route path="/watch/series/:seriesId" element={<WatchPage />} />
               <Route path="/movies" element={<MoviesPage />} />
               <Route path="/tv-series" element={<TvSeriesPage />} />
+              <Route path="/genres" element={<GenresPage />} />
+              <Route path="/genres/:genreId" element={<GenreCategoryPage />} />
               <Route path="/adverts" element={<AdvertsPage />} />
               <Route path="/apps" element={<AppsPage />} />
               <Route path="/trending" element={<TrendingPage />} />
