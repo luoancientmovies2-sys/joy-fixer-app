@@ -331,7 +331,7 @@ export function SubscriptionModal({ open, onOpenChange, agentOnly }: Subscriptio
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${step === "checkout" ? "max-w-2xl max-h-[90vh] p-0 overflow-hidden" : "max-w-2xl max-h-[90vh] overflow-y-auto"} ring-2 ${ringClass} rounded-xl`}>
+      <DialogContent className={`${step === "checkout" ? "max-w-2xl h-[90vh] p-0 overflow-hidden flex flex-col" : "max-w-2xl max-h-[90vh] overflow-y-auto"} ring-2 ${ringClass} rounded-xl`}>
         {/* PLAN SELECTION */}
         {step === "plans" && !isAgent && (
           <>
@@ -435,14 +435,15 @@ export function SubscriptionModal({ open, onOpenChange, agentOnly }: Subscriptio
               <DialogTitle>Complete Payment</DialogTitle>
               <DialogDescription>Complete your payment</DialogDescription>
             </DialogHeader>
-            <iframe
-              src={paymentUrl}
-              className="w-full border-0 flex-1"
-              style={{ minHeight: "60vh", height: "calc(90vh - 40px)" }}
-              title="Pesapal Checkout"
-              allow="payment"
-            />
-            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 py-3 text-sm text-foreground bg-background/95 backdrop-blur-sm border-t shadow-lg z-10">
+            <div className="flex-1 min-h-0">
+              <iframe
+                src={paymentUrl}
+                className="h-full w-full border-0"
+                title="Pesapal Checkout"
+                allow="payment"
+              />
+            </div>
+            <div className="shrink-0 flex items-center justify-center gap-2 border-t bg-background px-4 py-3 text-sm text-foreground shadow-lg">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
               <span className="font-medium">Waiting for payment confirmation...</span>
             </div>
