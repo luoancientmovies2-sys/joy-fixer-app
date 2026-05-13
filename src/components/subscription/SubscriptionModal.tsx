@@ -437,14 +437,14 @@ export function SubscriptionModal({ open, onOpenChange, agentOnly }: Subscriptio
             </DialogHeader>
             <iframe
               src={paymentUrl}
-              className="w-full border-0"
-              style={{ height: "calc(90vh - 32px)" }}
+              className="w-full border-0 flex-1"
+              style={{ minHeight: "60vh", height: "calc(90vh - 40px)" }}
               title="Pesapal Checkout"
               allow="payment"
             />
-            <div className="flex items-center justify-center gap-2 py-1.5 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Waiting for payment confirmation...</span>
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-2 py-3 text-sm text-foreground bg-background/95 backdrop-blur-sm border-t shadow-lg z-10">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span className="font-medium">Waiting for payment confirmation...</span>
             </div>
           </>
         )}
