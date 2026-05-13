@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getSeries, type Series } from "@/lib/firebase-db";
 import { createSeries, updateSeries, deleteSeries } from "@/lib/admin-db";
 
-const CATEGORIES = ["trending", "popular", "action", "comedy", "drama", "horror", "romance", "sci-fi"];
+const CATEGORIES = ["trending", "popular"];
+const GENRES = ["Hindi", "Action", "Sci-Fi", "Nollywood", "Horror", "Animation", "Comedy", "Romance", "Cartoon", "War", "Kung Fu", "Musical", "Fantasy"];
 
 export default function AdminSeries() {
   const [series, setSeries] = useState<Series[]>([]);
@@ -164,14 +165,31 @@ export default function AdminSeries() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="genre">Genre</Label>
-                  <Input
-                    id="genre"
-                    value={formData.genre}
-                    onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                    placeholder="Action, Drama, Comedy..."
-                    required
-                  />
+                  <Label>Genres</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {GENRES.map((g) => {
+                      const isSelected = formData.genre.split(', ').includes(g);
+                      return (
+                        <Button
+                          key={g}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            let current = formData.genre ? formData.genre.split(', ') : [];
+                            if (isSelected) {
+                              current = current.filter(c => c !== g);
+                            } else {
+                              current.push(g);
+                            }
+                            setFormData({ ...formData, genre: current.join(', ') });
+                          }}
+                        >
+                          {g}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
